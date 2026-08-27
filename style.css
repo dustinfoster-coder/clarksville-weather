@@ -1,0 +1,25 @@
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:transparent}
+body{font-family:Arial,Helvetica,sans-serif}
+.weather-widget{width:650px;max-width:100%;height:146px;background:#fff;border:1px solid #d5d5d5;border-radius:0 0 7px 7px;overflow:hidden;color:#080808}
+.weather-main{height:113px;display:flex;align-items:center;padding:12px 25px 12px 36px}
+.weather-icon{width:78px;height:78px;flex:0 0 78px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#0759b4 0%,#1687dc 55%,#36b2ef 100%);color:#fff;font-family:Georgia,serif;font-size:68px;line-height:1;text-shadow:0 0 5px #fff,0 0 14px rgba(255,255,255,.8)}
+.temperature{margin-left:19px;min-width:106px;font-size:62px;line-height:1;font-weight:800;letter-spacing:-2px}
+.degree{font-size:29px;vertical-align:top;position:relative;top:1px;margin-left:1px}
+.separator{width:1px;height:59px;background:#d7d7d7;margin-left:10px;margin-right:27px}
+.weather-details{flex:1;text-align:center;padding-right:18px}
+.feels-like{font-size:18px;line-height:25px;white-space:nowrap}
+.feels-like span{color:#df1b23;font-weight:700}
+.condition{font-size:16px;line-height:25px}
+.weather-footer{height:32px;display:flex;align-items:center;padding:0 23px;border-top:1px solid #ddd;font-size:11px;color:#777}
+.weather-footer a{color:#111;font-weight:700;text-decoration:none}
+.bullet{color:#222;margin:0 10px}
+@media(max-width:500px){
+.weather-main{padding-left:14px;padding-right:14px}
+.weather-icon{width:64px;height:64px;flex-basis:64px;font-size:55px}
+.temperature{font-size:50px;min-width:84px;margin-left:12px}
+.separator{margin-left:7px;margin-right:12px}
+.weather-details{padding-right:0}
+.feels-like{font-size:15px}.feels-like span{font-size:15px}.condition{font-size:14px}
+.weather-footer{padding-left:14px}
+}

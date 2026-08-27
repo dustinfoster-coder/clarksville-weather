@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clarksville Weather</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="weather-widget">
+  <div class="weather-main">
+    <div class="weather-icon" id="weatherIcon">☀</div>
+    <div class="temperature"><span id="temperature">--</span><span class="degree">°</span></div>
+    <div class="separator"></div>
+    <div class="weather-details">
+      <div class="feels-like">Feels Like <span id="feelsLike">--°</span></div>
+      <div class="condition" id="condition">Loading weather...</div>
+    </div>
+  </div>
+  <div class="weather-footer">
+    <a href="https://forecast.weather.gov/MapClick.php?lat=35.47&lon=-93.48" target="_blank" rel="noopener">National Weather Service</a>
+    <span class="bullet">•</span>
+    <span>Updated <span id="updated">--</span></span>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
