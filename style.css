@@ -1,0 +1,120 @@
+html,body{
+  margin:0;
+  padding:0;
+  background:transparent;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.weather-widget{
+  width:100%;
+  max-width:650px;
+  min-width:320px;
+  height:146px;
+  box-sizing:border-box;
+  background:#fff;
+  border:1px solid #d5d5d5;
+  border-radius:0 0 7px 7px;
+  overflow:hidden;
+  color:#080808;
+}
+.main{
+  height:113px;
+  display:flex;
+  align-items:center;
+  box-sizing:border-box;
+  padding:12px 24px 12px 36px;
+}
+.weather-icon{
+  width:78px;
+  height:78px;
+  flex:0 0 78px;
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 43%, #fff 0 8%, transparent 9%),
+    linear-gradient(180deg,#0056b5 0%,#0877d3 45%,#24a5ed 100%);
+}
+.sun{
+  position:absolute;
+  left:50%;
+  top:43%;
+  transform:translate(-50%,-50%);
+  color:#fff;
+  font-family:Georgia,serif;
+  font-size:68px;
+  line-height:1;
+  text-shadow:
+    0 0 4px #fff,
+    0 0 8px rgba(255,255,255,.85),
+    0 0 18px rgba(255,255,255,.5);
+}
+.temperature{
+  margin-left:19px;
+  min-width:106px;
+  font-weight:800;
+  font-size:62px;
+  line-height:1;
+  letter-spacing:-2px;
+}
+.degree{
+  font-size:30px;
+  vertical-align:top;
+  position:relative;
+  top:1px;
+  margin-left:1px;
+}
+.divider{
+  width:1px;
+  height:59px;
+  background:#d8d8d8;
+  margin-left:10px;
+  margin-right:27px;
+}
+.details{
+  flex:1;
+  text-align:center;
+  padding-right:18px;
+}
+.feels{
+  font-size:18px;
+  line-height:24px;
+  white-space:nowrap;
+}
+.feels strong{
+  color:#e21b23;
+  font-size:18px;
+}
+.condition{
+  font-size:16px;
+  line-height:25px;
+}
+.footer{
+  height:32px;
+  box-sizing:border-box;
+  border-top:1px solid #ddd;
+  display:flex;
+  align-items:center;
+  padding:0 23px;
+  font-size:11px;
+  color:#777;
+  white-space:nowrap;
+}
+.footer a{
+  color:#111;
+  font-weight:700;
+  text-decoration:none;
+}
+.dot{
+  color:#222;
+  margin:0 10px;
+  font-size:10px;
+}
+@media(max-width:520px){
+  .main{padding-left:14px;padding-right:14px}
+  .weather-icon{width:65px;height:65px;flex-basis:65px}
+  .temperature{font-size:50px;min-width:84px;margin-left:12px}
+  .divider{margin-left:7px;margin-right:12px;height:55px}
+  .details{padding-right:2px}
+  .feels,.feels strong{font-size:15px}
+  .condition{font-size:14px}
+  .footer{padding-left:14px}
+}
