@@ -15,8 +15,7 @@
 const POINT_URL = "https://api.weather.gov/points/35.47,-93.48";
 
 const HEADERS = {
-  "Accept": "application/geo+json, application/json",
-  "User-Agent": "ClarksvilleSchoolDistrictWeather/1.0"
+  "Accept": "application/geo+json, application/json"
 };
 
 async function getJSON(url) {
