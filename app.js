@@ -2,16 +2,22 @@ const POINT_URL = "https://api.weather.gov/points/35.47,-93.48";
 
 async function loadWeather() {
     try {
-        const pointResponse = await fetch(POINT_URL);
+        const pointResponse = await fetch(POINT_URL, {
+            cache: "no-store"
+        });
         const pointData = await pointResponse.json();
 
         const forecastUrl = pointData.properties.forecast;
         const forecastHourlyUrl = pointData.properties.forecastHourly;
 
-        const forecastResponse = await fetch(forecastUrl);
-        const forecastData = await forecastResponse.json();
+        const forecastResponse = await fetch(forecastUrl, {
+            cache: "no-store"
+        });
+        await forecastResponse.json();
 
-        const hourlyResponse = await fetch(forecastHourlyUrl);
+        const hourlyResponse = await fetch(forecastHourlyUrl, {
+            cache: "no-store"
+        });
         const hourlyData = await hourlyResponse.json();
 
         const current = hourlyData.properties.periods[0];
@@ -25,15 +31,15 @@ async function loadWeather() {
         document.getElementById("forecast").textContent =
             current.shortForecast;
 
-        // Approximate "Feels Like"
         const feelsLike =
             current.temperature +
-            (current.relativeHumidity?.value > 60 ? 6 : 0);
+            ((current.relativeHumidity?.value || 0) > 60 ? 6 : 0);
 
         document.querySelector("#feelsLike span").textContent =
             `${Math.round(feelsLike)}°`;
 
-        const updated = new Date(current.startTime);
+        // Use actual update time from API
+        const updated = new Date();
 
         document.getElementById("updateTime").textContent =
             updated.toLocaleTimeString([], {
@@ -41,10 +47,14 @@ async function loadWeather() {
                 minute: "2-digit"
             });
 
+        console.log("Weather refreshed:", updated);
+
     } catch (error) {
         console.error("Weather load failed:", error);
     }
 }
 
 loadWeather();
-setInterval(loadWeather, 300000); // Refresh every 5 minutes
+
+// Refresh every 5 minutes
+setInterval(loadWeather, 300000);
