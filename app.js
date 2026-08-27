@@ -5,55 +5,70 @@ async function loadWeather() {
         const pointResponse = await fetch(POINT_URL, {
             cache: "no-store"
         });
+
         const pointData = await pointResponse.json();
 
-        const forecastUrl = pointData.properties.forecast;
-        const forecastHourlyUrl = pointData.properties.forecastHourly;
+        const hourlyResponse = await fetch(
+            pointData.properties.forecastHourly,
+            {
+                cache: "no-store"
+            }
+        );
 
-        const forecastResponse = await fetch(forecastUrl, {
-            cache: "no-store"
-        });
-        await forecastResponse.json();
-
-        const hourlyResponse = await fetch(forecastHourlyUrl, {
-            cache: "no-store"
-        });
         const hourlyData = await hourlyResponse.json();
 
-        const current = hourlyData.properties.periods[0];
+        const now = new Date();
 
+        const current =
+            hourlyData.properties.periods.find(period => {
+                const start = new Date(period.startTime);
+                const end = new Date(period.endTime);
+                return now >= start && now < end;
+            }) || hourlyData.properties.periods[0];
+
+        // Temperature
         document.getElementById("temperature").textContent =
             `${Math.round(current.temperature)}°`;
 
-        document.getElementById("weatherIcon").src =
-            current.icon;
+        // Weather icon
+        document.getElementById("weatherIcon").src = current.icon;
 
+        // Forecast text
         document.getElementById("forecast").textContent =
             current.shortForecast;
 
-        const feelsLike =
-            current.temperature +
-            ((current.relativeHumidity?.value || 0) > 60 ? 6 : 0);
+        // Feels Like calculation
+        const temp = current.temperature;
+        const humidity = current.relativeHumidity?.value || 0;
+
+        let feelsLike = temp;
+
+        if (temp >= 80) {
+            feelsLike = temp + ((humidity - 40) / 10);
+        }
 
         document.querySelector("#feelsLike span").textContent =
             `${Math.round(feelsLike)}°`;
 
-        // Use actual update time from API
-        const updated = new Date();
-
+        // Last updated time
         document.getElementById("updateTime").textContent =
-            updated.toLocaleTimeString([], {
+            new Date().toLocaleTimeString([], {
                 hour: "numeric",
                 minute: "2-digit"
             });
 
-        console.log("Weather refreshed:", updated);
+        console.log("Weather Updated");
+        console.log("Period:", current.name);
+        console.log("Temp:", current.temperature);
+        console.log("Humidity:", humidity);
+        console.log("Feels Like:", Math.round(feelsLike));
 
     } catch (error) {
         console.error("Weather load failed:", error);
     }
 }
 
+// Initial load
 loadWeather();
 
 // Refresh every 5 minutes
