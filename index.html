@@ -4,13 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clarksville Weather</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
 <div class="weather-card">
+
     <div class="weather-main">
-        <img id="weatherIcon" class="weather-icon" src="" alt="Weather">
+
+        <img
+            id="weatherIcon"
+            class="weather-icon"
+            src=""
+            alt="Weather"
+        >
 
         <div class="temp-section">
             <div id="temperature" class="temperature">--°</div>
@@ -19,11 +26,17 @@
         <div class="divider"></div>
 
         <div class="details">
+
             <div id="feelsLike" class="feels-like">
                 Feels Like <span>--°</span>
             </div>
-            <div id="forecast" class="forecast">Loading...</div>
+
+            <div id="forecast" class="forecast">
+                Loading...
+            </div>
+
         </div>
+
     </div>
 
     <div class="weather-footer">
@@ -31,6 +44,7 @@
         <span class="dot">•</span>
         Updated <span id="updateTime">--:--</span>
     </div>
+
 </div>
 
 <script src="app.js?v=3"></script>
