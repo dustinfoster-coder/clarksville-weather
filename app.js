@@ -1,17 +1,28 @@
 const POINT_URL = "https://api.weather.gov/points/35.47,-93.48";
 
+let refreshCount = 0;
+
 async function loadWeather() {
     try {
-        const pointResponse = await fetch(POINT_URL, {
-            cache: "no-store"
-        });
+        refreshCount++;
+
+        console.log(`Refresh #${refreshCount} at ${new Date().toLocaleTimeString()}`);
+
+        // Get forecast URLs
+        const pointResponse = await fetch(
+            `${POINT_URL}?t=${Date.now()}`,
+            {
+                cache: "reload"
+            }
+        );
 
         const pointData = await pointResponse.json();
 
+        // Get hourly forecast
         const hourlyResponse = await fetch(
-            pointData.properties.forecastHourly,
+            `${pointData.properties.forecastHourly}?t=${Date.now()}`,
             {
-                cache: "no-store"
+                cache: "reload"
             }
         );
 
@@ -31,7 +42,8 @@ async function loadWeather() {
             `${Math.round(current.temperature)}°`;
 
         // Weather icon
-        document.getElementById("weatherIcon").src = current.icon;
+        document.getElementById("weatherIcon").src =
+            current.icon + `&t=${Date.now()}`;
 
         // Forecast text
         document.getElementById("forecast").textContent =
@@ -54,17 +66,23 @@ async function loadWeather() {
         document.getElementById("updateTime").textContent =
             new Date().toLocaleTimeString([], {
                 hour: "numeric",
-                minute: "2-digit"
+                minute: "2-digit",
+                second: "2-digit"
             });
 
         console.log("Weather Updated");
-        console.log("Period:", current.name);
+        console.log("Forecast Period:", current.name);
+        console.log("Start:", current.startTime);
+        console.log("End:", current.endTime);
         console.log("Temp:", current.temperature);
         console.log("Humidity:", humidity);
         console.log("Feels Like:", Math.round(feelsLike));
 
     } catch (error) {
         console.error("Weather load failed:", error);
+
+        document.getElementById("forecast").textContent =
+            "Weather data unavailable";
     }
 }
 
