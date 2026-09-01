@@ -1,4 +1,7 @@
+```javascript
 const POINT_URL = "https://api.weather.gov/points/35.47,-93.48";
+const KRUE_OBSERVATION_URL =
+    "https://api.weather.gov/stations/KRUE/observations/latest";
 
 async function loadWeather() {
 
@@ -6,9 +9,9 @@ async function loadWeather() {
 
     try {
 
-        // ---------------------------------------
-        // GET NWS POINT INFORMATION
-        // ---------------------------------------
+        // ==========================================
+        // GET CLARKSVILLE POINT INFORMATION
+        // ==========================================
 
         const pointResponse = await fetch(POINT_URL, {
             cache: "no-store",
@@ -25,50 +28,20 @@ async function loadWeather() {
 
         const pointData = await pointResponse.json();
 
-        const forecastURL =
-            pointData.properties.forecast;
-
         const hourlyURL =
             pointData.properties.forecastHourly;
 
 
-        // ---------------------------------------
-        // GET REGULAR POINT FORECAST
-        // ---------------------------------------
+        // ==========================================
+        // GET CLARKSVILLE HOURLY FORECAST
+        // ==========================================
 
-        const forecastResponse = await fetch(
-            forecastURL,
-            {
-                cache: "no-store",
-                headers: {
-                    "Accept": "application/geo+json"
-                }
+        const hourlyResponse = await fetch(hourlyURL, {
+            cache: "no-store",
+            headers: {
+                "Accept": "application/geo+json"
             }
-        );
-
-        if (!forecastResponse.ok) {
-            throw new Error(
-                `Forecast API error: ${forecastResponse.status}`
-            );
-        }
-
-        const forecastData =
-            await forecastResponse.json();
-
-
-        // ---------------------------------------
-        // GET HOURLY FORECAST
-        // ---------------------------------------
-
-        const hourlyResponse = await fetch(
-            hourlyURL,
-            {
-                cache: "no-store",
-                headers: {
-                    "Accept": "application/geo+json"
-                }
-            }
-        );
+        });
 
         if (!hourlyResponse.ok) {
             throw new Error(
@@ -76,34 +49,77 @@ async function loadWeather() {
             );
         }
 
-        const hourlyData =
-            await hourlyResponse.json();
+        const hourlyData = await hourlyResponse.json();
 
-
-        const forecastPeriods =
-            forecastData.properties.periods;
-
-        const hourlyPeriods =
+        const periods =
             hourlyData.properties.periods;
 
-
-        if (!forecastPeriods || forecastPeriods.length === 0) {
-            throw new Error("No forecast periods returned.");
-        }
-
-        if (!hourlyPeriods || hourlyPeriods.length === 0) {
-            throw new Error("No hourly periods returned.");
+        if (!periods || periods.length === 0) {
+            throw new Error(
+                "No forecast periods returned."
+            );
         }
 
 
-        // ---------------------------------------
-        // FIND CURRENT HOURLY PERIOD
-        // ---------------------------------------
+        // ==========================================
+        // GET CURRENT CONDITIONS FROM KRUE
+        // ==========================================
+
+        const observationResponse =
+            await fetch(KRUE_OBSERVATION_URL, {
+                cache: "no-store",
+                headers: {
+                    "Accept": "application/geo+json"
+                }
+            });
+
+        if (!observationResponse.ok) {
+            throw new Error(
+                `Observation API error: ${observationResponse.status}`
+            );
+        }
+
+        const observationData =
+            await observationResponse.json();
+
+        const observation =
+            observationData.properties;
+
+
+        // ==========================================
+        // CURRENT TEMPERATURE
+        // ==========================================
+
+        let temperatureF;
+
+        if (observation.temperature.value !== null) {
+
+            const temperatureC =
+                Number(observation.temperature.value);
+
+            temperatureF =
+                (temperatureC * 9 / 5) + 32;
+
+        } else {
+
+            // Fall back to Clarksville forecast
+            temperatureF =
+                Number(periods[0].temperature);
+        }
+
+
+        document.getElementById("temperature").textContent =
+            `${Math.round(temperatureF)}°`;
+
+
+        // ==========================================
+        // FIND CURRENT CLARKSVILLE FORECAST PERIOD
+        // ==========================================
 
         const now = new Date();
 
-        let currentHourly =
-            hourlyPeriods.find(period => {
+        let currentForecast =
+            periods.find(period => {
 
                 const start =
                     new Date(period.startTime);
@@ -115,147 +131,134 @@ async function loadWeather() {
 
             });
 
-
-        // If the current period isn't found,
-        // use the first available period.
-
-        if (!currentHourly) {
-            currentHourly =
-                hourlyPeriods[0];
+        if (!currentForecast) {
+            currentForecast = periods[0];
         }
 
 
-        // ---------------------------------------
-        // TEMPERATURE
-        // ---------------------------------------
-
-        const temperature =
-            Number(currentHourly.temperature);
-
-        document.getElementById("temperature").textContent =
-            `${Math.round(temperature)}°`;
-
-
-        // ---------------------------------------
+        // ==========================================
         // WEATHER ICON
-        // ---------------------------------------
+        // ==========================================
 
         document.getElementById("weatherIcon").src =
-            currentHourly.icon;
+            currentForecast.icon;
 
 
-        // ---------------------------------------
-        // WEATHER DESCRIPTION
-        // ---------------------------------------
+        // ==========================================
+        // FORECAST DESCRIPTION
+        // ==========================================
 
         document.getElementById("forecast").textContent =
-            currentHourly.shortForecast;
+            currentForecast.shortForecast;
 
 
-        // ---------------------------------------
+        // ==========================================
         // FEELS LIKE
-        // ---------------------------------------
+        // ==========================================
 
-        let feelsLike =
-            temperature;
+        let feelsLikeF = temperatureF;
 
 
-        // Use NWS apparent temperature
-        // if available.
+        // Heat index
+        if (observation.heatIndex?.value !== null &&
+            observation.heatIndex?.value !== undefined) {
 
-        if (
-            currentHourly.temperature != null &&
-            currentHourly.relativeHumidity &&
-            currentHourly.relativeHumidity.value != null
+            const heatIndexC =
+                Number(observation.heatIndex.value);
+
+            feelsLikeF =
+                (heatIndexC * 9 / 5) + 32;
+
+        }
+
+        // Wind chill
+        else if (
+            observation.windChill?.value !== null &&
+            observation.windChill?.value !== undefined
         ) {
 
-            const humidity =
-                Number(
-                    currentHourly.relativeHumidity.value
-                );
+            const windChillC =
+                Number(observation.windChill.value);
 
-            if (
-                temperature >= 80 &&
-                humidity > 0
-            ) {
-
-                feelsLike =
-                    temperature +
-                    ((humidity - 40) / 10);
-
-            }
+            feelsLikeF =
+                (windChillC * 9 / 5) + 32;
         }
 
 
         document.querySelector(
             "#feelsLike span"
         ).textContent =
-            `${Math.round(feelsLike)}°`;
+            `${Math.round(feelsLikeF)}°`;
 
 
-        // ---------------------------------------
-        // NWS FORECAST UPDATE TIME
-        // ---------------------------------------
+        // ==========================================
+        // UPDATE TIME
+        // ==========================================
 
-        const updated =
-            hourlyData.properties.updated;
-
-
-        if (updated) {
+        if (observation.timestamp) {
 
             document.getElementById(
                 "updateTime"
             ).textContent =
-                new Date(updated).toLocaleTimeString(
-                    [],
-                    {
-                        hour: "numeric",
-                        minute: "2-digit"
-                    }
-                );
+                new Date(
+                    observation.timestamp
+                ).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit"
+                });
 
         } else {
 
             document.getElementById(
                 "updateTime"
             ).textContent =
-                new Date().toLocaleTimeString(
-                    [],
-                    {
-                        hour: "numeric",
-                        minute: "2-digit"
-                    }
-                );
+                new Date().toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit"
+                });
         }
 
 
-        // ---------------------------------------
+        // ==========================================
         // DEBUG INFORMATION
-        // ---------------------------------------
+        // ==========================================
 
         console.log(
-            "NWS Point:",
+            "================================"
+        );
+
+        console.log(
+            "NWS Clarksville Point:",
             "35.47, -93.48"
         );
 
         console.log(
-            "Current Hour:",
-            currentHourly.name
+            "Current Station:",
+            "Russellville Regional Airport (KRUE)"
         );
 
         console.log(
-            "Temperature:",
-            currentHourly.temperature
+            "Current Temperature:",
+            Math.round(temperatureF) + "°F"
         );
 
         console.log(
-            "Forecast:",
-            currentHourly.shortForecast
+            "Feels Like:",
+            Math.round(feelsLikeF) + "°F"
         );
 
         console.log(
-            "NWS Updated:",
-            hourlyData.properties.updated
+            "Clarksville Forecast:",
+            currentForecast.shortForecast
+        );
+
+        console.log(
+            "Observation Time:",
+            observation.timestamp
+        );
+
+        console.log(
+            "================================"
         );
 
 
@@ -274,23 +277,22 @@ async function loadWeather() {
 }
 
 
-// ---------------------------------------
-// LOAD IMMEDIATELY
-// ---------------------------------------
+// ==========================================
+// LOAD WEATHER IMMEDIATELY
+// ==========================================
 
 loadWeather();
 
 
-// ---------------------------------------
+// ==========================================
 // REFRESH EVERY 5 MINUTES
-// ---------------------------------------
+// ==========================================
 
 setInterval(() => {
 
-    console.log(
-        "5 minute refresh"
-    );
+    console.log("5 minute refresh");
 
     loadWeather();
 
 }, 5 * 60 * 1000);
+```
