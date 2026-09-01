@@ -6,7 +6,10 @@ async function loadWeather() {
 
     try {
 
-        // Get point data
+        // ---------------------------------------
+        // GET NWS POINT INFORMATION
+        // ---------------------------------------
+
         const pointResponse = await fetch(POINT_URL, {
             cache: "no-store",
             headers: {
@@ -15,14 +18,50 @@ async function loadWeather() {
         });
 
         if (!pointResponse.ok) {
-            throw new Error(`Point API error: ${pointResponse.status}`);
+            throw new Error(
+                `Point API error: ${pointResponse.status}`
+            );
         }
 
         const pointData = await pointResponse.json();
 
-        // Get hourly forecast
+        const forecastURL =
+            pointData.properties.forecast;
+
+        const hourlyURL =
+            pointData.properties.forecastHourly;
+
+
+        // ---------------------------------------
+        // GET REGULAR POINT FORECAST
+        // ---------------------------------------
+
+        const forecastResponse = await fetch(
+            forecastURL,
+            {
+                cache: "no-store",
+                headers: {
+                    "Accept": "application/geo+json"
+                }
+            }
+        );
+
+        if (!forecastResponse.ok) {
+            throw new Error(
+                `Forecast API error: ${forecastResponse.status}`
+            );
+        }
+
+        const forecastData =
+            await forecastResponse.json();
+
+
+        // ---------------------------------------
+        // GET HOURLY FORECAST
+        // ---------------------------------------
+
         const hourlyResponse = await fetch(
-            pointData.properties.forecastHourly,
+            hourlyURL,
             {
                 cache: "no-store",
                 headers: {
@@ -32,135 +71,225 @@ async function loadWeather() {
         );
 
         if (!hourlyResponse.ok) {
-            throw new Error(`Hourly API error: ${hourlyResponse.status}`);
-        }
-
-        const hourlyData = await hourlyResponse.json();
-
-        // Get observation stations
-        const stationResponse = await fetch(
-            pointData.properties.observationStations,
-            {
-                cache: "no-store",
-                headers: {
-                    "Accept": "application/geo+json"
-                }
-            }
-        );
-
-        if (!stationResponse.ok) {
-            throw new Error(`Station API error: ${stationResponse.status}`);
-        }
-
-        const stationData = await stationResponse.json();
-
-        const stationId = stationData.features[0].id;
-
-        // Get latest observation
-        const observationResponse = await fetch(
-            `${stationId}/observations/latest`,
-            {
-                cache: "no-store",
-                headers: {
-                    "Accept": "application/geo+json"
-                }
-            }
-        );
-
-        if (!observationResponse.ok) {
             throw new Error(
-                `Observation API error: ${observationResponse.status}`
+                `Hourly API error: ${hourlyResponse.status}`
             );
         }
 
-        const observationData = await observationResponse.json();
+        const hourlyData =
+            await hourlyResponse.json();
 
-        const periods = hourlyData.properties.periods;
 
-        if (!periods || periods.length === 0) {
-            throw new Error("No hourly forecast periods returned.");
+        const forecastPeriods =
+            forecastData.properties.periods;
+
+        const hourlyPeriods =
+            hourlyData.properties.periods;
+
+
+        if (!forecastPeriods || forecastPeriods.length === 0) {
+            throw new Error("No forecast periods returned.");
         }
 
-        const currentForecast = periods[0];
-
-        // Current observed temperature
-        const tempC =
-            observationData.properties.temperature.value;
-
-        const tempF =
-            tempC != null
-                ? (tempC * 9 / 5) + 32
-                : currentForecast.temperature;
-
-        document.getElementById("temperature").textContent =
-            `${Math.round(tempF)}°`;
-
-        // Forecast text
-        document.getElementById("forecast").textContent =
-            currentForecast.shortForecast;
-
-        // Weather icon
-        document.getElementById("weatherIcon").src =
-            currentForecast.icon + "&t=" + Date.now();
-
-        // Feels Like
-        const heatIndexC =
-            observationData.properties.heatIndex?.value;
-
-        const windChillC =
-            observationData.properties.windChill?.value;
-
-        let feelsLikeF = tempF;
-
-        if (heatIndexC != null) {
-            feelsLikeF = (heatIndexC * 9 / 5) + 32;
-        } else if (windChillC != null) {
-            feelsLikeF = (windChillC * 9 / 5) + 32;
+        if (!hourlyPeriods || hourlyPeriods.length === 0) {
+            throw new Error("No hourly periods returned.");
         }
 
-        document.querySelector("#feelsLike span").textContent =
-            `${Math.round(feelsLikeF)}°`;
 
-        // NOAA update time
-        document.getElementById("updateTime").textContent =
-            new Date(
-                observationData.properties.timestamp
-            ).toLocaleTimeString([], {
-                hour: "numeric",
-                minute: "2-digit"
+        // ---------------------------------------
+        // FIND CURRENT HOURLY PERIOD
+        // ---------------------------------------
+
+        const now = new Date();
+
+        let currentHourly =
+            hourlyPeriods.find(period => {
+
+                const start =
+                    new Date(period.startTime);
+
+                const end =
+                    new Date(period.endTime);
+
+                return now >= start && now < end;
+
             });
 
+
+        // If the current period isn't found,
+        // use the first available period.
+
+        if (!currentHourly) {
+            currentHourly =
+                hourlyPeriods[0];
+        }
+
+
+        // ---------------------------------------
+        // TEMPERATURE
+        // ---------------------------------------
+
+        const temperature =
+            Number(currentHourly.temperature);
+
+        document.getElementById("temperature").textContent =
+            `${Math.round(temperature)}°`;
+
+
+        // ---------------------------------------
+        // WEATHER ICON
+        // ---------------------------------------
+
+        document.getElementById("weatherIcon").src =
+            currentHourly.icon;
+
+
+        // ---------------------------------------
+        // WEATHER DESCRIPTION
+        // ---------------------------------------
+
+        document.getElementById("forecast").textContent =
+            currentHourly.shortForecast;
+
+
+        // ---------------------------------------
+        // FEELS LIKE
+        // ---------------------------------------
+
+        let feelsLike =
+            temperature;
+
+
+        // Use NWS apparent temperature
+        // if available.
+
+        if (
+            currentHourly.temperature != null &&
+            currentHourly.relativeHumidity &&
+            currentHourly.relativeHumidity.value != null
+        ) {
+
+            const humidity =
+                Number(
+                    currentHourly.relativeHumidity.value
+                );
+
+            if (
+                temperature >= 80 &&
+                humidity > 0
+            ) {
+
+                feelsLike =
+                    temperature +
+                    ((humidity - 40) / 10);
+
+            }
+        }
+
+
+        document.querySelector(
+            "#feelsLike span"
+        ).textContent =
+            `${Math.round(feelsLike)}°`;
+
+
+        // ---------------------------------------
+        // NWS FORECAST UPDATE TIME
+        // ---------------------------------------
+
+        const updated =
+            hourlyData.properties.updated;
+
+
+        if (updated) {
+
+            document.getElementById(
+                "updateTime"
+            ).textContent =
+                new Date(updated).toLocaleTimeString(
+                    [],
+                    {
+                        hour: "numeric",
+                        minute: "2-digit"
+                    }
+                );
+
+        } else {
+
+            document.getElementById(
+                "updateTime"
+            ).textContent =
+                new Date().toLocaleTimeString(
+                    [],
+                    {
+                        hour: "numeric",
+                        minute: "2-digit"
+                    }
+                );
+        }
+
+
+        // ---------------------------------------
+        // DEBUG INFORMATION
+        // ---------------------------------------
+
         console.log(
-            "Observation Temp:",
-            Math.round(tempF)
+            "NWS Point:",
+            "35.47, -93.48"
+        );
+
+        console.log(
+            "Current Hour:",
+            currentHourly.name
+        );
+
+        console.log(
+            "Temperature:",
+            currentHourly.temperature
         );
 
         console.log(
             "Forecast:",
-            currentForecast.shortForecast
+            currentHourly.shortForecast
         );
 
         console.log(
-            "Observation Updated:",
-            observationData.properties.timestamp
+            "NWS Updated:",
+            hourlyData.properties.updated
         );
+
 
     } catch (error) {
 
-        console.error("Weather load failed:", error);
+        console.error(
+            "Weather load failed:",
+            error
+        );
 
-        document.getElementById("forecast").textContent =
+        document.getElementById(
+            "forecast"
+        ).textContent =
             "Unable to load weather";
     }
 }
 
-// Load immediately
+
+// ---------------------------------------
+// LOAD IMMEDIATELY
+// ---------------------------------------
+
 loadWeather();
 
-// Refresh every 5 minutes
+
+// ---------------------------------------
+// REFRESH EVERY 5 MINUTES
+// ---------------------------------------
+
 setInterval(() => {
 
-    console.log("5 minute refresh");
+    console.log(
+        "5 minute refresh"
+    );
 
     loadWeather();
 
